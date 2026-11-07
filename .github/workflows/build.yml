@@ -7,12 +7,10 @@ jobs:
       - uses: actions/checkout@v4
       - id: find
         run: |
-          f=$(find . -name settings.gradle.kts | head -n 1)
-          if [ -z "$f" ]; then
-            echo "No settings.gradle.kts found. Repo files:"
-            ls -R | head -60
-            exit 1
+          if ! find . -name settings.gradle.kts | grep -q .; then
+            unzip -oq ./*.zip || { echo "No project and no zip found. Repo files:"; ls -a; exit 1; }
           fi
+          f=$(find . -name settings.gradle.kts | head -n 1)
           echo "dir=$(dirname "$f")" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: 17 }
