@@ -3,20 +3,25 @@ on: [workflow_dispatch, push]
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: WaveTunes
     steps:
       - uses: actions/checkout@v4
+      - id: find
+        run: |
+          f=$(find . -name settings.gradle.kts | head -n 1)
+          if [ -z "$f" ]; then
+            echo "No settings.gradle.kts found. Repo files:"
+            ls -R | head -60
+            exit 1
+          fi
+          echo "dir=$(dirname "$f")" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: 17 }
       - run: yes | sdkmanager --licenses > /dev/null || true
       - uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: 8.9
-          build-root-directory: WaveTunes
+        with: { gradle-version: 8.9 }
       - run: gradle assembleDebug
+        working-directory: ${{ steps.find.outputs.dir }}
       - uses: actions/upload-artifact@v4
         with:
           name: WaveTunes-apk
-          path: WaveTunes/app/build/outputs/apk/debug/app-debug.apk
+          path: "**/build/outputs/apk/debug/*.apk"
